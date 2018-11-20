@@ -3,7 +3,6 @@
 #include "RiskGUI.h"
 #include "Observer.h"
 #include "Subject.h"
-#include "Player.h"
 #include <QWidget>
 
 class ObserverView : public Observer {

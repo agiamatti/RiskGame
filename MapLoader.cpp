@@ -34,12 +34,24 @@ ifstream verify(ifstream readMap, string file, vector <Continent> &continents) {
                 string oneLine = file;
 
                 //finds the line with '=' at index 1 or greater, otherwise it marks the end of the continent
+                char charLine[oneLine.length()];
+                strcpy(charLine, oneLine.c_str());
+                char find = '=';
 
-                if (oneLine.find("=") == string::npos){
+                const char *ptr = strchr(charLine, find);
+                long index;
+                if(ptr) {
+                    index = ptr - charLine;
+                }
+                else{
+                    index = -1;
+                }
+
+
+                if (index<1){
                     break;
                 }
                 else {
-                    int index = oneLine.find("=");
                     string continentName = oneLine.substr(0, index);
                     int value = stoi(oneLine.substr(index + 1));
                     continents.push_back(Continent(value, continentName));
