@@ -2,7 +2,7 @@
 #include "Country.h"
 
 
-// the parametrized constructor; the name is asked in the constructor
+// the parametrized constructor taking 1 argument: the deck of the game; the name is asked in the constructor
 Player::Player(RiskGUI* ui_in, Deck& deck){
 	hand = new Hand(deck);
 	dice = new Dice();
@@ -12,7 +12,7 @@ Player::Player(RiskGUI* ui_in, Deck& deck){
     playerName = ui->getResponse();
 }
 
-// the other parametrized constructor
+// the other parametrized constructor taking 2 arguments; the deck of the game and the name of the player
 Player::Player(RiskGUI* ui_in, Deck& deck, string playerName){
 	hand = new Hand(deck);
 	dice = new Dice();
@@ -32,45 +32,8 @@ Player::~Player(){
 
 //setting particular strategy
 void Player::setStrategy(Strategy* inputStrat){
+    //delete strategy;
     strategy = inputStrat;
-}
-
-bool Player::hasHumanStrategy(){
-    return strategy->isHumanStrategy();
-}
-
-
-//Observer methods
-void Player::setFlag(int x){
-    flag = x;
-}
-
-int Player::getFlag(){
-    return flag;
-}
-
-void Player::setTargetedCountry(Country* c){
-    targetedCountry = c;
-}
-
-Country Player::getTargetedCountry(){
-    return *targetedCountry;
-}
-
-void Player::setSourceCountry(Country * c){
-    sourceCountry = c;
-}
-
-Country Player::getSourceCountry(){
-    return *sourceCountry;
-}
-
-void Player::setOther(int y){
-    other = y;
-}
-
-int Player::getOther(){
-    return other;
 }
 
 //public method of obtaining player name
@@ -154,7 +117,6 @@ void Player::calculateReinforcementsPerTurn(vector <Continent> continents) {
 		bonus = bonus + "none.";
 	}
     ui->consoleOut(bonus);
-    setFlag(9); setOther(continentsBonus);
 }
 
 //returns the number of reinforcements per turn for the player
@@ -233,11 +195,9 @@ void Player::reinforce() {
 
 // Game method for reinforcing a territory
 bool Player::reinforce(Country* territory, int reinforcements) {
-    setFlag(1);
 	for (unsigned int i = 0; i<countriesOwned.size(); i++) {
 		if (countriesOwned[i]->getCountryName() == territory->getCountryName()) {
 			territory->setArmyValue(territory->getArmyValue() + reinforcements);
-            setFlag(2); setTargetedCountry(territory); setOther(reinforcements);
             ui->consoleOut( getPlayerName() + " is reinforcing " + territory->getCountryName() + " with " +  to_string(reinforcements) + " reinforcements. New army value: " +  to_string(territory->getArmyValue()) );
 			return true;
 		}
@@ -248,7 +208,6 @@ bool Player::reinforce(Country* territory, int reinforcements) {
 
 //Self-suficient fortify() method, calls the parametrized fortify
 void Player::fortify() {
-    setFlag(3);
     strategy->fortify();
 }
 
@@ -264,7 +223,6 @@ bool Player::fortify(Country* target, int fortifications, Country* source) {
 		if (countriesOwned[i]->getCountryName() == target->getCountryName()) {
 			target->setArmyValue(target->getArmyValue() + fortifications);
 			source->setArmyValue(source->getArmyValue() - fortifications);
-            setSourceCountry(source); setFlag(4); setTargetedCountry(target);
             ui->consoleOut( getPlayerName() + " is fortifying " + target->getCountryName() + " with " +  to_string(fortifications) + " armies from "
                 + source->getCountryName() + ". " + source->getCountryName() + " army value: " +  to_string(source->getArmyValue()) + " "
                 + target->getCountryName() +" army value: " + to_string(target->getArmyValue()));
@@ -277,7 +235,6 @@ bool Player::fortify(Country* target, int fortifications, Country* source) {
 
 //Self-sufficient attack method
 void Player::attack() {
-    setFlag(5);
     strategy->attack();
 }
 
@@ -285,7 +242,6 @@ void Player::attack() {
 bool Player::attack(Country* target, Country* source) {
 	if (!ownsCountry(target) && target->isNeighbor(source) && source->getArmyValue()>1) { //army value must be larger than 1 to attack
         ui->consoleOut( getPlayerName() + " is attacking " + target->getPlayer()->getPlayerName() + "'s " + target->getCountryName() + " from " + source->getCountryName() + "!" );
-        setFlag(6);
 
 		int ctr = 1;
 
@@ -303,7 +259,7 @@ bool Player::attack(Country* target, Country* source) {
 			}
 
 			else {
-                maxRollsA = source->getArmyValue()-1;
+				maxRollsA= source->getArmyValue()-1;
 			}
 
 			if (target->getArmyValue() > 2) {
@@ -314,20 +270,7 @@ bool Player::attack(Country* target, Country* source) {
 				maxRollsD = target->getArmyValue();
 			}
 
-
-
-            int* attackerRoll;
-            int* defenderRoll;
-
-            //non human strategy; automatic no matter what
-            if(!strategy->isHumanStrategy()){
-                attackerRoll = roll(maxRollsA);
-                defenderRoll = roll(maxRollsD);
-            }
-
-            //Manual Dice Mode
-            else if (ctr > 1 && (ui->getDiceMode()>0)) {
-                setFlag(7);
+            if (ctr > 1 && ui->getDiceMode()>0) { //if DICE_MODE is 0; then the dice rolling is automatic -> no confirmation from the user to stop attacking
                 ui->consoleOut( playerName + "'s " + source->getCountryName() + " with army value " +  to_string(source->getArmyValue()) + " is attacking " + target->getPlayer()->getPlayerName() + "'s " + target->getCountryName() + " with army value " +  to_string(target->getArmyValue()) + "." );
                 ui->consoleOut( "Do you want to continue attacking? Enter 'no' to stop." );
 				string response;
@@ -337,9 +280,10 @@ bool Player::attack(Country* target, Country* source) {
 				}
 			}
 			
+            int* attackerRoll;
+            int* defenderRoll;
 
-            else if(ui->getDiceMode()==1){
-                setFlag(7);
+            if(ui->getDiceMode()==1){
                 ui->consoleOut( "The attacker can use 1 to " +  to_string(maxRollsA) + " dice rolls. How many armies does the attacker want to use in attack #" +  to_string(ctr) + "?" );
                 rollA = ui->getIndex(1, maxRollsA, "number");
 
@@ -464,25 +408,4 @@ void Player::printHandOfCards() {
 // player method rolling the dice; int num is how many dice are desired to roll; 2 as defender, and 3 as attacker
 int* Player::roll(int num) {
 	return dice->roll(num);
-}
-
-
-double Player::getPercentWorldOwned() {
-    return percentWorldOwned;
-}
-
-// This function is called with the size of the info vector as a parameter
-void Player::setPercentWorldOwned(int totalCountries) {
-    percentWorldOwned = double((double)getCountriesOwned().size()) /(double)totalCountries;
-}
-
-void Player::worldDomination() {
-    setFlag(8);
-    double BASE = 40.0;
-    cout << playerName << ": ";
-    double numberOfStars = percentWorldOwned * BASE;
-    for (int i = 1; i < numberOfStars; i++) {
-        cout << "*";
-    }
-    cout << endl;
 }

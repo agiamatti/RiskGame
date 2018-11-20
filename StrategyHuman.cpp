@@ -149,6 +149,3 @@ void StrategyHuman::attack(){
     }
 }
 
-bool StrategyHuman::isHumanStrategy(){
-    return true;
-}

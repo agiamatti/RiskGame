@@ -63,7 +63,7 @@ void StrategyAggressive::attack()
         attackable = player->getAdjAttackable(source);
         target = attackable.at(0);
 
-        //cout << "Attacking " << source->getCountryName() << " from " << target->getCountryName() << endl;
+        cout << "Attacking " << source->getCountryName() << " from " << target->getCountryName() << endl;
         player->ui->consoleOut( "Aggressive AI attacks! Source: " + source->getCountryName() + " Target: " + target->getCountryName() );
 
         if (player->attack(target, source) && source->getArmyValue()>1) { //if the attack succeeds, attack will return true; and we need the source to have more than 1 army
@@ -97,6 +97,3 @@ void StrategyAggressive::fortify()
 
 }
 
-bool StrategyAggressive::isHumanStrategy(){
-    return false;
-}

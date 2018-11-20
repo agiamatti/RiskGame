@@ -8,7 +8,6 @@ RiskGUI::RiskGUI(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowIcon(QIcon());
-    playerAtCurrentTurn = NULL;
     gameBegun = false;
 
     ui->startButton->hide();
@@ -113,11 +112,6 @@ void RiskGUI::closeEvent(QCloseEvent *event){
         exit(0);
 }
 
-
-Player* RiskGUI::getPlayerAtCurrentTurn(){
-    return playerAtCurrentTurn;
-}
-
 //used to obtain strings from UI
 string RiskGUI::getResponse(){
 
@@ -136,7 +130,7 @@ string RiskGUI::getResponse(){
 
     output= ""; //clear; so the string doesn't persist
 
-    //Notify(); //update the view
+    Notify(); //update the view
     return response;
 }
 
@@ -189,7 +183,7 @@ int RiskGUI::getIndex(int start, int end, string item) {
 
         }
 
-        //Notify(); //update the view
+        Notify(); //update the view
         return index;
 }
 
@@ -505,10 +499,12 @@ void RiskGUI::on_loadButton_clicked(){
          string playerName = playersSetup.at(i);
          p.push_back(new Player(this, deck, playerName));
 
-         if (playerName.find("Aggressive AI")!=string::npos){
+         QString player = QString::fromStdString(playerName);
+
+         if (player.contains("Aggressive AI")){
              p.at(i)->setStrategy(new StrategyAggressive(p.at(i)));
          }
-         else if (playerName.find("Benevolent AI")!=string::npos){
+         else if (player.contains("Benevolent AI")){
              p.at(i)->setStrategy(new StrategyBenevolent(p.at(i)));
          }
      }
@@ -576,19 +572,14 @@ void RiskGUI::on_loadButton_clicked(){
      int search;
      int turn = 0;
 
-     //Desired Manual Army Distribution; must account for non-human strategies
+     //Desired Manual Army Distribution
      while (A > 0 && ARMY_DISTRIBUTION_MODE == 1) {
          while (turn != theAmountOfPlayers) {
-             if(p.at(orderOfTurns.at(turn))->hasHumanStrategy()){
-                 p.at(orderOfTurns.at(turn))->printCountriesOwned();
-                 cout << "\nPlayer: " << p.at(orderOfTurns.at(turn))->getPlayerName();
-                 cout << " Please pick a country to reinforce" << endl;
-                 search = getIndex(1, p.at(orderOfTurns.at(turn))->getNumberOfCountriesOwned(), "selection");
-                 p.at(orderOfTurns.at(turn))->reinforce((p.at(orderOfTurns.at(turn))->getCountriesOwned().at(search - 1)), 1);
-             }
-             else{
-                 p.at(orderOfTurns.at(turn))->reinforce(p.at(orderOfTurns.at(turn))->getCountriesOwned().at(rand() % p.at(orderOfTurns.at(turn))->getNumberOfCountriesOwned()), 1);
-             }
+             p.at(orderOfTurns.at(turn))->printCountriesOwned();
+             cout << "\nPlayer: " << p.at(orderOfTurns.at(turn))->getPlayerName();
+             cout << " Please pick a country to reinforce" << endl;
+             search = getIndex(1, p.at(orderOfTurns.at(turn))->getNumberOfCountriesOwned(), "selection");
+             p.at(orderOfTurns.at(turn))->reinforce((p.at(orderOfTurns.at(turn))->getCountriesOwned().at(search - 1)), 1);
              turn++;
          }
          turn = 0;
@@ -631,49 +622,49 @@ void RiskGUI::on_startButton_clicked(){
              consoleOut("Round " + to_string(++roundCounter));
              // for each player
              for (unsigned int i = 0; i < p.size(); i++) {
-                 playerAtCurrentTurn = p.at(orderOfTurns.at(i));
-                 if(playerAtCurrentTurn->getNumberOfCountriesOwned()!=0){
-                 playerAtCurrentTurn->calculateReinforcementsPerTurn(continents); // must call this method at the beginning of every turn to account for changes in reinforcements
+                 if(p.at(orderOfTurns.at(i))->getNumberOfCountriesOwned()!=0){
+                 p.at(orderOfTurns.at(i))->calculateReinforcementsPerTurn(continents); // must call this method at the beginning of every turn to account for changes in reinforcements
 
                  // Reinforcement phase
 
-                 consoleOut(playerAtCurrentTurn->getPlayerName() + "'s reinforcement phase");
-                 playerAtCurrentTurn->reinforce();
+                 consoleOut(p.at(orderOfTurns.at(i))->getPlayerName() + "'s reinforcement phase");
+                 p.at(orderOfTurns.at(i))->reinforce();
+                 Notify();
 
                  // Attack Phase - Here is where gameOver can change value
-                 consoleOut(playerAtCurrentTurn->getPlayerName() + "'s attack phase");
-                 playerAtCurrentTurn->attack();
+                 consoleOut(p.at(orderOfTurns.at(i))->getPlayerName() + "'s attack phase");
+                 p.at(orderOfTurns.at(i))->attack();
 
                  //Here is a method for finishing the game early to show the win condition
                  if (roundCounter == END_GAME_TURN) {
                      consoleOut("Ending game");
                      for (unsigned int j = i + 1; j < p.size(); j++) {
-                         vector <Country*> countries =  playerAtCurrentTurn->getCountriesOwned();
+                         vector <Country*> countries =  p.at(orderOfTurns.at(j))->getCountriesOwned();
                          for (unsigned int k = 0; k < countries.size(); k++) {
-                             playerAtCurrentTurn->addCountriesOwned(countries.at(k));
-                             playerAtCurrentTurn->removeCountriesOwned(countries.at(k));
+                             p.at(orderOfTurns.at(i))->addCountriesOwned(countries.at(k));
+                             p.at(orderOfTurns.at(j))->removeCountriesOwned(countries.at(k));
                          }
 
-                         playerAtCurrentTurn->printCountriesOwned();
-                         playerAtCurrentTurn->printCountriesOwned();
+                         p.at(orderOfTurns.at(i))->printCountriesOwned();
+                         p.at(orderOfTurns.at(i + 1))->printCountriesOwned();
                      }
 
                  }
 
                  // Indicate game over and leave main loop
                  if (p.at(orderOfTurns.at(i))->getNumberOfCountriesOwned() >= map.size()) {
-                     consoleOut("Game Over. " + playerAtCurrentTurn->getPlayerName() + " Wins!" );
+                     consoleOut("Game Over. " + p.at(orderOfTurns.at(i))->getPlayerName() + " Wins!" );
                      gameOver = true;
                      QMessageBox msgBox;
-                     msgBox.setText(QString::fromStdString(playerAtCurrentTurn->getPlayerName() + " Wins!"));
+                     msgBox.setText(QString::fromStdString(p.at(orderOfTurns.at(i))->getPlayerName() + " Wins!"));
                      msgBox.exec();
                      break;
                  }
 
 
                  // Fortification Phase
-                 consoleOut(playerAtCurrentTurn->getPlayerName() + "'s fortification phase");
-                 playerAtCurrentTurn->fortify();
+                 consoleOut(p.at(orderOfTurns.at(i))->getPlayerName() + "'s fortification phase");
+                 p.at(orderOfTurns.at(i))->fortify();
                 }
 
              }

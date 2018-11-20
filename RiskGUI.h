@@ -67,7 +67,6 @@ public:
     int getIndex(int start, int end, string item);
     string getResponse();
     int getDiceMode();
-    Player* getPlayerAtCurrentTurn();
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -99,7 +98,6 @@ private:
     vector <int> orderOfTurns;
 
 
-    Player* playerAtCurrentTurn;
     SettingsDialog* settings;
     vector <string> playersSetup;
     bool gameBegun;

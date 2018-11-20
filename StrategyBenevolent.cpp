@@ -54,7 +54,3 @@ void StrategyBenevolent::fortify()
 //    countries.at(sourceCountryIndex)->setArmyValue(countries.at(sourceCountryIndex)->getArmyValue() - army);
 //    adjCountries.at(targetCountryIndex)->setArmyValue(adjCountries.at(targetCountryIndex)->getArmyValue() + army);
 }
-
-bool StrategyBenevolent::isHumanStrategy(){
-    return false;
-}

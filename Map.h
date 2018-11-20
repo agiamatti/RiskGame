@@ -6,7 +6,8 @@
 #include <time.h>
 #include "Country.h"
 
-class Map{
+class Map
+{
 
 public:
 
