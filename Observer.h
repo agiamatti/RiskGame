@@ -3,7 +3,7 @@
 class Observer {
 public:
     virtual ~Observer();
-	virtual void Update() = 0;
+    virtual void Update() = 0;
 protected:
-	Observer();
+    Observer();
 };

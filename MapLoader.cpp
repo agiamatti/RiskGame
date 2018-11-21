@@ -33,13 +33,11 @@ ifstream verify(ifstream readMap, string file, vector <Continent> &continents) {
                 getline(readMap, file, '\n');
                 string oneLine = file;
 
-                //finds the line with '=' at index 1 or greater, otherwise it marks the end of the continent
-
                 if (oneLine.find("=") == string::npos){
                     break;
                 }
                 else {
-                    int index = oneLine.find("=");
+                    unsigned long index = oneLine.find("=");
                     string continentName = oneLine.substr(0, index);
                     int value = stoi(oneLine.substr(index + 1));
                     continents.push_back(Continent(value, continentName));

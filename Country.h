@@ -5,8 +5,7 @@
 using namespace std;
 
 class Player;
-class Country
-{
+class Country{
 
 public:
     //constructors and destructors
