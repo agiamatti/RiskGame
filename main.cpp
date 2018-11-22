@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
 
         //create riskgui class on stack otherwise it will not properly close
         RiskGUI* riskgui = new RiskGUI();
+        ObserverView obsView(riskgui);
         riskgui->show();
-        ObserverView obsView (riskgui);
 
         return a.exec();
 

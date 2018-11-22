@@ -45,7 +45,7 @@
     <item row="1" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>Army dist. mode: (0: auto; 1: manual)</string>
+       <string>Army dist. mode: (0: normal; 1: random)</string>
       </property>
      </widget>
     </item>
@@ -65,7 +65,7 @@
     <item row="3" column="0">
      <widget class="QLabel" name="label_5">
       <property name="text">
-       <string> Dice mode (0:auto; 1 manual)</string>
+       <string> Dice mode (0:normal; 1 max)</string>
       </property>
      </widget>
     </item>
@@ -85,7 +85,7 @@
    <property name="geometry">
     <rect>
      <x>545</x>
-     <y>40</y>
+     <y>50</y>
      <width>25</width>
      <height>20</height>
     </rect>

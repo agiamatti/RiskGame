@@ -1,13 +1,13 @@
 #pragma once
-#include <iostream>
 #include "Strategy.h"
-using namespace std;
 
 class StrategyHuman :public Strategy {
 public:
     StrategyHuman(Player* inputPlayer);
-    void attack();
+    void reinforceAtStart(int x);
     void reinforce();
+    void attack();
     void fortify();
+    int getDice(int max);
     bool isHumanStrategy();
 };

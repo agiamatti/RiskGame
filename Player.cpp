@@ -3,8 +3,8 @@
 
 
 // the parametrized constructor; the name is asked in the constructor
-Player::Player(RiskGUI* ui_in, Deck& deck){
-	hand = new Hand(deck);
+Player::Player(RiskGUI* ui_in, Deck* deck){
+    hand = new Hand(ui_in, deck);
 	dice = new Dice();
 	reinforcementsPerTurn = 3;
     ui = ui_in;
@@ -13,8 +13,8 @@ Player::Player(RiskGUI* ui_in, Deck& deck){
 }
 
 // the other parametrized constructor
-Player::Player(RiskGUI* ui_in, Deck& deck, string playerName){
-	hand = new Hand(deck);
+Player::Player(RiskGUI* ui_in, Deck* deck, string playerName){
+    hand = new Hand(ui_in, deck);
 	dice = new Dice();
 	reinforcementsPerTurn = 3;
     ui = ui_in;
@@ -33,6 +33,10 @@ Player::~Player(){
 //setting particular strategy
 void Player::setStrategy(Strategy* inputStrat){
     strategy = inputStrat;
+}
+
+Strategy* Player::getStrategy(){
+    return strategy;
 }
 
 bool Player::hasHumanStrategy(){
@@ -123,13 +127,14 @@ int Player::getNumberOfCountriesOwned() const {
 
 // the calculateReinforcementsPerTurn() method should be invoked for each player at the beginning of the turn
 void Player::calculateReinforcementsPerTurn(vector <Continent> continents) {
+    drawCardTurn = false; // at the beginning of each turn it is set to false
 	reinforcementsPerTurn = getNumberOfCountriesOwned() / 3;
 
 	if (reinforcementsPerTurn < 3) {
 		reinforcementsPerTurn = 3;
 	}
 
-	string bonus = playerName + " has the following continents: ";
+    string bonus = playerName + " has the following continents: ";
 	int continentsBonus = 0;
 	int terrPerCont;
 
@@ -145,14 +150,14 @@ void Player::calculateReinforcementsPerTurn(vector <Continent> continents) {
 
 		if (terrPerCont == continents.at(i).getSizeOfCountriesInContinent()) {
 			continentsBonus = continentsBonus + continents.at(i).getContinentValue();
-			bonus = bonus + " " + continents.at(i).getContinentName() + " ";
+            bonus = bonus + " " + continents.at(i).getContinentName() + " ";
 		}
 	}
 
-	reinforcementsPerTurn = reinforcementsPerTurn + continentsBonus;
-	if (continentsBonus == 0) {
-		bonus = bonus + "none.";
-	}
+    reinforcementsPerTurn = reinforcementsPerTurn + continentsBonus;
+    if (continentsBonus == 0) {
+        bonus = bonus + "none.";
+    }
     ui->consoleOut(bonus);
     setFlag(9); setOther(continentsBonus);
 }
@@ -169,7 +174,7 @@ vector <Country*> Player::getCountriesOwned() {
 
 //returns the adjacent countries owned by the player for a country
 vector <Country*> Player::getAdjCountriesOwned(Country* source) {
-    vector <Country*> neighbors = source->getAdjCountries();
+    vector <Country*> neighbors = source->getAdjCountries(); //uses method from country
 	vector <Country*> ownNeighbors;
 	
 	for (unsigned int i = 0; i < neighbors.size(); i++) {
@@ -187,7 +192,7 @@ void Player::printAdjCountries(Country* source) {
 	}
 }
 
-//returns a vector of attackable territories, and prints the indicies to
+//returns a vector of attackable territories (countries the player can attack from a given source), and prints the indicies to it
 vector <Country*> Player::getAdjAttackable(Country* source) {
 	vector <Country*> intArr;
     vector <Country*> initialList = source->getAdjCountries();
@@ -209,9 +214,10 @@ void Player::printAdjAttackable(Country* source) {
 }
 
 //returns the countries that the player is able to launch an attack from: countries with greater than 1 army value, and that have neighboring countries that are not owned by the player
+//pass 0 for normal mode
 vector <Country*> Player::getAttackReady() {
-	vector <Country*> attackReady;
-	for (unsigned int i = 0; i < countriesOwned.size(); i++) {
+    vector <Country*> attackReady;
+    for (unsigned int i = 0; i < countriesOwned.size(); i++) {
 		if (countriesOwned.at(i)->getArmyValue()>1 && !getAdjAttackable(countriesOwned.at(i)).empty()) {
 			attackReady.push_back(countriesOwned.at(i));
 		}
@@ -226,19 +232,25 @@ void Player::printAttackReady() {
 	}
 }
 
+
+//reinforce at the start of the game
+void Player::reinforceAtStart(int x) {
+    setFlag(1); ui->Notify();
+    strategy->reinforceAtStart(x);
+}
+
 //reinforce calling the strategy's reinforce
 void Player::reinforce() {
+    setFlag(1); ui->Notify();
     strategy->reinforce();
 }
 
 // Game method for reinforcing a territory
 bool Player::reinforce(Country* territory, int reinforcements) {
-    setFlag(1);
 	for (unsigned int i = 0; i<countriesOwned.size(); i++) {
 		if (countriesOwned[i]->getCountryName() == territory->getCountryName()) {
 			territory->setArmyValue(territory->getArmyValue() + reinforcements);
-            setFlag(2); setTargetedCountry(territory); setOther(reinforcements);
-            ui->consoleOut( getPlayerName() + " is reinforcing " + territory->getCountryName() + " with " +  to_string(reinforcements) + " reinforcements. New army value: " +  to_string(territory->getArmyValue()) );
+            setFlag(2); setTargetedCountry(territory); setOther(reinforcements); ui->Notify();
 			return true;
 		}
 	}
@@ -246,46 +258,17 @@ bool Player::reinforce(Country* territory, int reinforcements) {
 	return false;
 }
 
-//Self-suficient fortify() method, calls the parametrized fortify
-void Player::fortify() {
-    setFlag(3);
-    strategy->fortify();
-}
-
-// Game method for fortifying a territory from troops from another adjacent one
-bool Player::fortify(Country* target, int fortifications, Country* source) {
-
-	if (source->getArmyValue()<fortifications || !ownsCountry(target) || !ownsCountry(source) || !source->isNeighbor(target)) {
-        ui->consoleOut( "Invalid fortification" );
-		return false;
-	}
-
-	for (unsigned int i = 0; i<countriesOwned.size(); i++) {
-		if (countriesOwned[i]->getCountryName() == target->getCountryName()) {
-			target->setArmyValue(target->getArmyValue() + fortifications);
-			source->setArmyValue(source->getArmyValue() - fortifications);
-            setSourceCountry(source); setFlag(4); setTargetedCountry(target);
-            ui->consoleOut( getPlayerName() + " is fortifying " + target->getCountryName() + " with " +  to_string(fortifications) + " armies from "
-                + source->getCountryName() + ". " + source->getCountryName() + " army value: " +  to_string(source->getArmyValue()) + " "
-                + target->getCountryName() +" army value: " + to_string(target->getArmyValue()));
-			return true;
-		}
-	}
-
-	return false;
-}
 
 //Self-sufficient attack method
 void Player::attack() {
-    setFlag(5);
+    setFlag(5); ui->Notify();
     strategy->attack();
 }
 
-//Game method for attacking an enemy territory from one of your own territories
-bool Player::attack(Country* target, Country* source) {
+//Game method for attacking an enemy territory from one of your own territories; returns 0 for failed attack, 1-3 for winning attacker dice
+int Player::attack(Country* target, Country* source) {
 	if (!ownsCountry(target) && target->isNeighbor(source) && source->getArmyValue()>1) { //army value must be larger than 1 to attack
-        ui->consoleOut( getPlayerName() + " is attacking " + target->getPlayer()->getPlayerName() + "'s " + target->getCountryName() + " from " + source->getCountryName() + "!" );
-        setFlag(6);
+        setSourceCountry(source); setTargetedCountry(target); setFlag(6); ui->Notify();
 
 		int ctr = 1;
 
@@ -296,6 +279,7 @@ bool Player::attack(Country* target, Country* source) {
 			int maxRollsD = 0;
 			int rollA = 0;
 			int rollD = 0;
+            int winningDice = 0;                    // the dice that won the attack
 			
 			//setting maximum rolls for defender and attacker
 			if (source->getArmyValue() > 3) {
@@ -318,54 +302,59 @@ bool Player::attack(Country* target, Country* source) {
 
             int* attackerRoll;
             int* defenderRoll;
+            string attackerRollString = "";
+            string defenderRollString = "";
 
-            //non human strategy; automatic no matter what
-            if(!strategy->isHumanStrategy()){
-                attackerRoll = roll(maxRollsA);
-                defenderRoll = roll(maxRollsD);
-            }
-
-            //Manual Dice Mode
-            else if (ctr > 1 && (ui->getDiceMode()>0)) {
-                setFlag(7);
-                ui->consoleOut( playerName + "'s " + source->getCountryName() + " with army value " +  to_string(source->getArmyValue()) + " is attacking " + target->getPlayer()->getPlayerName() + "'s " + target->getCountryName() + " with army value " +  to_string(target->getArmyValue()) + "." );
+            //Traditional Dice Mode DICE_MODE == 0
+            if (ctr > 1 && ui->getDiceMode()==0 && strategy->isHumanStrategy()) {
                 ui->consoleOut( "Do you want to continue attacking? Enter 'no' to stop." );
 				string response;
                 response = ui->getResponse();
 				if (response == "no") {
-					return false;
+                    return 0;
 				}
 			}
 			
 
-            else if(ui->getDiceMode()==1){
-                setFlag(7);
+            if(ui->getDiceMode()==0){
+                setFlag(7); ui->Notify();
                 ui->consoleOut( "The attacker can use 1 to " +  to_string(maxRollsA) + " dice rolls. How many armies does the attacker want to use in attack #" +  to_string(ctr) + "?" );
-                rollA = ui->getIndex(1, maxRollsA, "number");
+                rollA = strategy->getDice(maxRollsA);
 
-
+                winningDice = rollA;
                 attackerRoll = roll(rollA);
 
                 ui->consoleOut( "The defender can use 1 to " +  to_string(maxRollsD) + " dice rolls. How many armies does the defender want to use in attack #" +  to_string(ctr) + "?" );
-                rollD = ui->getIndex(1, maxRollsD, "number");
+                rollD = target->getPlayer()->getStrategy()->getDice(maxRollsD);
 
                 defenderRoll = roll(rollD);
+
+                for (int i = 0; i<rollA; i++){
+                    attackerRollString = attackerRollString + " " + to_string(attackerRoll[i]);
+                }
+
+                for (int i = 0; i<rollD; i++){
+                    defenderRollString = defenderRollString + " " + to_string(defenderRoll[i]);
+                }
             }
 
-            else{ //DICE_MODE 0 - AUTOMATIC DICE to max
+            else{ //DICE_MODE 1 - AUTOMATIC DICE to MAX
+                cout<<"shalala dice2"<<endl;
                 attackerRoll = roll(maxRollsA);
                 defenderRoll = roll(maxRollsD);
+                winningDice = rollA = maxRollsA;
+                rollD = maxRollsD;
+
+                for (int i = 0; i<maxRollsA; i++){
+                    attackerRollString = attackerRollString + " " + to_string(attackerRoll[i]);
+                }
+
+                for (int i = 0; i<maxRollsD; i++){
+                    defenderRollString = defenderRollString + " " + to_string(defenderRoll[i]);
+                }
             }
 
-            string attackerRollString = "";
-            for (int i = 0; i<maxRollsA; i++){
-                attackerRollString = attackerRollString + " " + to_string(attackerRoll[i]);
-            }
 
-            string defenderRollString = "";
-            for (int i = 0; i<maxRollsD; i++){
-                defenderRollString = defenderRollString + " " + to_string(defenderRoll[i]);
-            }
 
             ui->consoleOut( "Attack #" +  to_string(ctr) + "\tAttacker rolled: " + attackerRollString + "\tHighest: " +  to_string(*attackerRoll));
             ui->consoleOut( "\tDefender rolled: " + defenderRollString + "\tHighest: " +  to_string(*defenderRoll) );
@@ -374,17 +363,29 @@ bool Player::attack(Country* target, Country* source) {
 			if (attackerRoll[0] > defenderRoll[0]) {
 				if (target->getArmyValue() < 2) {
                     ui->consoleOut( getPlayerName() + " has conquered " + target->getCountryName() );
+                    Player* targetPlayer = target->getPlayer();
 					target->getPlayer()->removeCountriesOwned(target); //removeCountriesOwned(target) from the owner; attack is over
 					target->setPlayer(this); //setPlayer() calls addCountriesOwned()
 					source->setArmyValue(source->getArmyValue() - 1); //you lose an army to fortify your new territory
-					return true;
+
+                    if (!drawCardTurn){ //drawing one card if you haven't this turn due to conquest
+                        hand->drawCardFromDeck();
+                        drawCardTurn = true;
+                    }
+
+                    if(targetPlayer->getNumberOfCountriesOwned()==0){
+                        hand->takeHand(targetPlayer->getHandOfCards()); //if the enemy is entirely defeated, take their cards
+                    }
+
+
+                    return winningDice-1;
 				}
 				target->setArmyValue(target->getArmyValue() - 1);	//target loses an army
 			}
 
 			else {
 				source->setArmyValue(source->getArmyValue() - 1);
-                //ui->consoleOut( getPlayerName + " has lost one army." );
+                winningDice--; //the attacker has one fewer army
 			}
 
 			//comparing second roll if it exists
@@ -392,10 +393,21 @@ bool Player::attack(Country* target, Country* source) {
 				if (attackerRoll[1] > defenderRoll[1]) {
 					if (target->getArmyValue() < 2) {
                         ui->consoleOut( getPlayerName() + " has conquered " + target->getCountryName() );
+                        Player* targetPlayer = target->getPlayer();
 						target->getPlayer()->removeCountriesOwned(target); //removeCountriesOwned(target) from the owner; attack is over
 						target->setPlayer(this); //setPlayer() calls addCountriesOwned()
 						source->setArmyValue(source->getArmyValue() - 1); //you lose an army to fortify your new territory
-						return true;
+
+                        if (!drawCardTurn){ //drawing one card if you haven't this turn due to conquest
+                            hand->drawCardFromDeck();
+                            drawCardTurn = true;
+                        }
+
+                        if(targetPlayer->getNumberOfCountriesOwned()==0){
+                            hand->takeHand(targetPlayer->getHandOfCards()); //if the enemy is entirely defeated, take their cards
+                        }
+
+                        return winningDice-1;
 					}
 					target->setArmyValue(target->getArmyValue() - 1);	//target loses an army
 				}
@@ -410,7 +422,7 @@ bool Player::attack(Country* target, Country* source) {
 
 		}
 
-		return false;
+        return 0;
 	}
 
     ui->consoleOut( getPlayerName() + " cannot attack " + target->getCountryName() + " from " + source->getCountryName() );
@@ -430,6 +442,33 @@ bool Player::attack(Country* target, Country* source) {
 }
 
 
+//Self-suficient fortify() method, calls the parametrized fortify
+void Player::fortify() {
+    drawCardTurn = false; //turns drawCard false for the next turn
+    setFlag(3); ui->Notify();
+    strategy->fortify();
+}
+
+// Game method for fortifying a territory from troops from another adjacent one
+bool Player::fortify(Country* target, int fortifications, Country* source) {
+
+    if (source->getArmyValue()<fortifications || !ownsCountry(target) || !ownsCountry(source) || !source->isNeighbor(target)) {
+        ui->consoleOut( "Invalid fortification" );
+        return false;
+    }
+
+    for (unsigned int i = 0; i<countriesOwned.size(); i++) {
+        if (countriesOwned[i]->getCountryName() == target->getCountryName()) {
+            target->setArmyValue(target->getArmyValue() + fortifications);
+            source->setArmyValue(source->getArmyValue() - fortifications);
+            setSourceCountry(source); setTargetedCountry(target); setOther(fortifications) ;setFlag(4); ui->Notify();
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 // method for checking if a player owns a country. Assumes no duplicate country names, as is expected in a game of Risk
 bool Player::ownsCountry(Country* country) {
@@ -443,7 +482,7 @@ bool Player::ownsCountry(Country* country) {
 
 // player method for printing countries owned
 void Player::printCountriesOwned() {
-	int size = countriesOwned.size();
+    unsigned long size = countriesOwned.size();
     ui->consoleOut( "Countries owned by " + getPlayerName() );
 	if (size == 0) {
         ui->consoleOut( "No countries owned." );
@@ -466,23 +505,3 @@ int* Player::roll(int num) {
 	return dice->roll(num);
 }
 
-
-double Player::getPercentWorldOwned() {
-    return percentWorldOwned;
-}
-
-// This function is called with the size of the info vector as a parameter
-void Player::setPercentWorldOwned(int totalCountries) {
-    percentWorldOwned = double((double)getCountriesOwned().size()) /(double)totalCountries;
-}
-
-void Player::worldDomination() {
-    setFlag(8);
-    double BASE = 40.0;
-    cout << playerName << ": ";
-    double numberOfStars = percentWorldOwned * BASE;
-    for (int i = 1; i < numberOfStars; i++) {
-        cout << "*";
-    }
-    cout << endl;
-}

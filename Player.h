@@ -13,12 +13,12 @@ class Strategy;
 class Player{
 
 public:
-    //public attribute
+    //public attributes
     RiskGUI* ui;
 
     //constructors
-    Player(RiskGUI* ui_in, Deck& deck);					// the parametrized constructor; the name will be asked in the constructor
-    Player(RiskGUI* ui_in, Deck& deck, string playerName); // the other parametrized constructor
+    Player(RiskGUI* ui_in, Deck* deck);					// the parametrized constructor; the name will be asked in the constructor
+    Player(RiskGUI* ui_in, Deck* deck, string playerName); // the other parametrized constructor
     ~Player();
 
     //attributes and other parametric methods
@@ -38,7 +38,7 @@ public:
 	void printAdjCountries(Country* source);
 	vector <Country*> getAdjAttackable(Country* source);
 	void printAdjAttackable(Country* source);
-	vector <Country*> getAttackReady();
+    vector <Country*> getAttackReady();
 	void printAttackReady();
 
     //observer methods
@@ -50,17 +50,16 @@ public:
     Country getSourceCountry();
     void setOther(int y);
     int getOther();
-    double getPercentWorldOwned();
-    void setPercentWorldOwned(int totalCountries);
-    void worldDomination();
 
     //Strategy and action methods
     void setStrategy(Strategy* inputStrat);
+    Strategy* getStrategy();
     bool hasHumanStrategy();
+    void reinforceAtStart(int x);
     void reinforce();
 	bool reinforce(Country* territory, int reinforcements);
     void attack();
-	bool attack(Country* target, Country* source);
+    int attack(Country* target, Country* source); //returns 0 for failed attack; 1-3 for attacker winning dice
     void fortify();
 	bool fortify(Country* target, int fortifications, Country* source);
 
@@ -76,11 +75,10 @@ private:
     Dice* dice;							// the dice facility owned by the player
     int other;							// for the observer pattern
     int flag;				            // for the observer pattern
-    double percentWorldOwned;			// for the observer pattern
     Country* targetedCountry;			// for the observer pattern
     Country* sourceCountry;				// for the observer pattern
     int reinforcementsPerTurn;			// reinforcements per turn given to player
     vector <Country*> countriesOwned;	// the Countries owned by the player
-    Strategy* strategy;
-
+    Strategy* strategy;                 // strategy pattern
+    bool drawCardTurn;                  // for drawing a card at the beginning of the turn
 };

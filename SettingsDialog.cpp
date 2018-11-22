@@ -1,16 +1,14 @@
 #include "SettingsDialog.h"
 #include "ui_settingsdialog.h"
 
-SettingsDialog::SettingsDialog(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::SettingsDialog)
-{
-    ui->setupUi(this);
+SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent), ui(new Ui::SettingsDialog){
+
     initiated = false;
+    ui->setupUi(this);
     NUM_OF_PLAYERS = 0;
     ui->lineEdit->setText("/Map/World.map");
     ui->lineEdit_3->setValidator(new QIntValidator(0,1));
-    ui->lineEdit_3->setText("0");
+    ui->lineEdit_3->setText("1");
     ui->lineEdit_4->setValidator(new QIntValidator(3,10000));
     ui->lineEdit_4->setText("1000");
     ui->lineEdit_5->setValidator(new QIntValidator(0,1));
@@ -42,9 +40,7 @@ SettingsDialog::~SettingsDialog()
 
 void SettingsDialog::on_buttonBox_accepted()
 {
-    while(!players.empty()){
-        players.pop_back();
-    }
+    players.clear();
 
     if (ui->lineEdit_6->text().isEmpty())
         players.push_back("Player 1");
@@ -75,20 +71,26 @@ void SettingsDialog::on_buttonBox_accepted()
 }
 
 
-void SettingsDialog::on_buttonBox_rejected()
-{
+void SettingsDialog::on_buttonBox_rejected(){
+
     if(!initiated){ //if no values set
+        players.clear();
         players.push_back("Player 1");
         players.push_back("Aggressive AI 2");
         players.push_back("Benevolent AI 3");
         MAP_PATH = "/Map/World.map";
         NUM_OF_PLAYERS = players.size();
-        ARMY_DISTRIBUTION_MODE = 0;
+        ARMY_DISTRIBUTION_MODE = 1;
         END_GAME_TURN = 1000;
         DICE_MODE = 0;
         initiated = true;
     }
 }
+
+void SettingsDialog::on_SettingsDialog_rejected(){
+    on_buttonBox_rejected();
+}
+
 
 void SettingsDialog::on_toolButton_pressed(){
     QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a map file to open."));
@@ -221,3 +223,4 @@ void SettingsDialog::on_comboBox_6_activated(const QString &arg1){
         ui->lineEdit_11->setReadOnly(true);
     }
 }
+

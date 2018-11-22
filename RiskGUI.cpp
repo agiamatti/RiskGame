@@ -8,7 +8,9 @@ RiskGUI::RiskGUI(QWidget *parent) :
 {
     ui->setupUi(this);
     setWindowIcon(QIcon());
+    deck = new Deck();
     playerAtCurrentTurn = NULL;
+    currentTurn = 0;
     gameBegun = false;
 
     ui->startButton->hide();
@@ -27,7 +29,6 @@ RiskGUI::~RiskGUI()
     for (unsigned int i = 0; i < p.size(); i++) {
         delete p.at(i); //deleting players
     }
-
     delete settings;
     delete ui;
 }
@@ -45,19 +46,28 @@ void RiskGUI::obtainParameters(){
 
 //prints parameters from the settings menu
 void RiskGUI::printParameters(){
-    consoleOut("Map Chosen Path: " + MAP_PATH + " Number of Players: " + to_string(NUM_OF_PLAYERS) + ", Army Distrubution Mode: " + to_string(ARMY_DISTRIBUTION_MODE) + " , Dice Mode: " + to_string(DICE_MODE));
+    consoleOut("Map Chosen Path: \"" + MAP_PATH + "\" Number of Players: " + to_string(NUM_OF_PLAYERS) + ", Army Distrubution Mode: " + to_string(ARMY_DISTRIBUTION_MODE) + " , Dice Mode: " + to_string(DICE_MODE));
 }
 
+int RiskGUI::getCurrentTurn(){
+    return currentTurn;
+}
 
 //returns dice mode; used in player
 int RiskGUI::getDiceMode(){
     return DICE_MODE;
 }
 
+//returns the player that it's currently the turn of, used by observerview
+Player* RiskGUI::getPlayerAtCurrentTurn(){
+    return playerAtCurrentTurn;
+}
+
+
 //prints to the game console; note that since the console uses html formatting, you can add colors and other formatting in that way
 void RiskGUI::consoleOut(std::string output){
     QApplication::processEvents(); //processes UI
-    Notify(); //update the view
+    QWidget::update(); //update the view
     ui->consoleOutput->append(QString::fromStdString(output));
 }
 
@@ -114,10 +124,6 @@ void RiskGUI::closeEvent(QCloseEvent *event){
 }
 
 
-Player* RiskGUI::getPlayerAtCurrentTurn(){
-    return playerAtCurrentTurn;
-}
-
 //used to obtain strings from UI
 string RiskGUI::getResponse(){
 
@@ -136,12 +142,17 @@ string RiskGUI::getResponse(){
 
     output= ""; //clear; so the string doesn't persist
 
-    Notify(); //update the view
+    //QWidget::update(); //update the view
     return response;
 }
 
 //used to obtain indices from GUI
 int RiskGUI::getIndex(int start, int end, string item) {
+
+    if(start>end){
+        cout<<"LOGIC ERROR" <<endl; //prints out bad calls; never used
+        start=end;
+    }
 
     int index = -1;
     string input;
@@ -189,7 +200,7 @@ int RiskGUI::getIndex(int start, int end, string item) {
 
         }
 
-        Notify(); //update the view
+         //QWidget::update(); //update the view
         return index;
 }
 
@@ -372,8 +383,8 @@ void RiskGUI::paintEvent(QPaintEvent *event){
     int legendOffset = (6-p.size())*20;
     //draw player legend at the left side of the graph
    for(unsigned int i = 0; i<p.size(); i++){
-        painter.fillRect(xbox+15,ybox+legendOffset+15+40*i,20,10,colorArray.at(i));
-        painter.drawText(xbox+45,ybox+legendOffset+24+40*i,QString::fromStdString(p.at(i)->getPlayerName().substr(0,13)));
+        painter.fillRect(xbox+10,ybox+legendOffset+15+40*i,20,10,colorArray.at(i));
+        painter.drawText(xbox+35,ybox+legendOffset+24+40*i,QString::fromStdString(p.at(i)->getPlayerName().substr(0,10) + ", Cards: " + to_string(p.at(i)->getHandOfCards()->getHandSize())));
     }
 
 
@@ -382,7 +393,7 @@ void RiskGUI::paintEvent(QPaintEvent *event){
   int rowDist = 40;
   int barOffset = (columnDist-rowDist)/2;
   int GraphOffset = (6-p.size())*30; //offset is to center the graph for lower player counts
-  int xgraph = 950+GraphOffset;
+  int xgraph = 985+GraphOffset;
   int ygraph = 700;
 
 
@@ -475,11 +486,12 @@ void RiskGUI::on_loadButton_clicked(){
 
      // Check if map is vaild
      if (!mp.isValid()) {
-         cout << "GoodBye" << endl;
-         return;
+         QMessageBox msgBox;
+         msgBox.setText("Invalid Map file. Please choose a valid file and reload the program. Exiting.");
+         msgBox.exec();
      }
      else {
-         cout << "Map is Created" << endl;
+         consoleOut("Map is Created");
      }
 
      // =================================== Part 3 =================================== //
@@ -489,13 +501,15 @@ void RiskGUI::on_loadButton_clicked(){
      // =================================== Part 4 =================================== //
 
      cout << "\nCreating Deck" << endl;
-     Deck deck(map);
+     delete deck; //delete the empty place holder deck
+     deck = new Deck(map);
 
      // Code to demonstrate that deck works properly
 
-     cout << "The number of cards in the deck: " << deck.size() << endl;
+     cout << "The number of cards in the deck: " << deck->size() << endl;
      cout << "The number of countries: " << map.size() << endl;
 
+     deck->demonstrateCorrectness();
 
      // =================================== Part 5 =================================== //
 
@@ -540,7 +554,6 @@ void RiskGUI::on_loadButton_clicked(){
          int random = rand() % (int)map.size();
          if (countries.at(random).getFlag() == 0) {
              p.at(orderOfTurns.at(j))->addCountriesOwned(&countries.at(random));
-             //countries.at(random).setPlayer(p.at(orderOfTurns.at(j)));
              countries.at(random).setArmyValue(1);
              countries.at(random).setFlag(1);
              if (j < theAmountOfPlayers - 1)
@@ -576,19 +589,11 @@ void RiskGUI::on_loadButton_clicked(){
      int search;
      int turn = 0;
 
-     //Desired Manual Army Distribution; must account for non-human strategies
-     while (A > 0 && ARMY_DISTRIBUTION_MODE == 1) {
+     //Desired Manual Army Distribution; accounts for non-human strategies
+     while (A > 0 && ARMY_DISTRIBUTION_MODE == 0) {
          while (turn != theAmountOfPlayers) {
-             if(p.at(orderOfTurns.at(turn))->hasHumanStrategy()){
-                 p.at(orderOfTurns.at(turn))->printCountriesOwned();
-                 cout << "\nPlayer: " << p.at(orderOfTurns.at(turn))->getPlayerName();
-                 cout << " Please pick a country to reinforce" << endl;
-                 search = getIndex(1, p.at(orderOfTurns.at(turn))->getNumberOfCountriesOwned(), "selection");
-                 p.at(orderOfTurns.at(turn))->reinforce((p.at(orderOfTurns.at(turn))->getCountriesOwned().at(search - 1)), 1);
-             }
-             else{
-                 p.at(orderOfTurns.at(turn))->reinforce(p.at(orderOfTurns.at(turn))->getCountriesOwned().at(rand() % p.at(orderOfTurns.at(turn))->getNumberOfCountriesOwned()), 1);
-             }
+             playerAtCurrentTurn = p.at(orderOfTurns.at(turn));
+             playerAtCurrentTurn->reinforceAtStart(1);
              turn++;
          }
          turn = 0;
@@ -596,10 +601,11 @@ void RiskGUI::on_loadButton_clicked(){
      }
 
 
-     //Automatic Army Distribution; randomly distributes armies for the players at the start
-     while (A > 0 && ARMY_DISTRIBUTION_MODE == 0) {
+     //Random Army Distribution; randomly distributes armies for ALL players at the start
+     while (A > 0 && ARMY_DISTRIBUTION_MODE == 1) {
          while (turn != theAmountOfPlayers) {
-             p.at(orderOfTurns.at(turn))->reinforce(p.at(orderOfTurns.at(turn))->getCountriesOwned().at(rand() % p.at(orderOfTurns.at(turn))->getNumberOfCountriesOwned()), 1);
+             playerAtCurrentTurn = p.at(orderOfTurns.at(turn));
+             playerAtCurrentTurn->reinforce(playerAtCurrentTurn->getCountriesOwned().at(rand() % playerAtCurrentTurn->getNumberOfCountriesOwned()), 1);
              turn++;
          }
 
@@ -614,7 +620,7 @@ void RiskGUI::on_loadButton_clicked(){
 
      ui->startButton->show();
      consoleOut("Game is loaded. Ready to Start.");
-     Notify(); //update the view
+     //QWidget::update(); //update the view
 }
 
 
@@ -624,11 +630,10 @@ void RiskGUI::on_startButton_clicked(){
          // MAIN GAME LOOP//
          ui->startButton->hide();
          bool gameOver = false;
-         int roundCounter = 0;
          consoleOut("The game has begun!");
 
          while (!gameOver) {
-             consoleOut("Round " + to_string(++roundCounter));
+             consoleOut("Round " + to_string(++currentTurn));
              // for each player
              for (unsigned int i = 0; i < p.size(); i++) {
                  playerAtCurrentTurn = p.at(orderOfTurns.at(i));
@@ -637,15 +642,13 @@ void RiskGUI::on_startButton_clicked(){
 
                  // Reinforcement phase
 
-                 consoleOut(playerAtCurrentTurn->getPlayerName() + "'s reinforcement phase");
                  playerAtCurrentTurn->reinforce();
 
                  // Attack Phase - Here is where gameOver can change value
-                 consoleOut(playerAtCurrentTurn->getPlayerName() + "'s attack phase");
                  playerAtCurrentTurn->attack();
 
                  //Here is a method for finishing the game early to show the win condition
-                 if (roundCounter == END_GAME_TURN) {
+                 if (currentTurn == END_GAME_TURN) {
                      consoleOut("Ending game");
                      for (unsigned int j = i + 1; j < p.size(); j++) {
                          vector <Country*> countries =  playerAtCurrentTurn->getCountriesOwned();
@@ -672,8 +675,8 @@ void RiskGUI::on_startButton_clicked(){
 
 
                  // Fortification Phase
-                 consoleOut(playerAtCurrentTurn->getPlayerName() + "'s fortification phase");
                  playerAtCurrentTurn->fortify();
+
                 }
 
              }

@@ -3,17 +3,17 @@
 #include <list>
 using namespace std;
 
-//Needs to have a forward reference due to
+//Needs to have a forward reference due to 
 //circular reference between Observer and Subject
 class Observer;
 
 class Subject {
   public:
-    virtual void Attach(Observer* o);
-    virtual void Detach(Observer* o);
-    virtual void Notify();
-    Subject();
+	virtual void Attach(Observer* o);
+	virtual void Detach(Observer* o);
+	virtual void Notify();
+	Subject();
     virtual ~Subject();
   private:
-    list<Observer*> *_observers;
+	list<Observer*> *_observers;
 };

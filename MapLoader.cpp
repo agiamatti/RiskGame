@@ -13,7 +13,9 @@ ifstream openFile(string input, vector <Continent> &continents) {
 	// Checking if the file exist or not.
 	readMap.open(input);
 	if (!readMap) {
-		cout << "Unable to open file" << endl;
+        QMessageBox msgBox;
+        msgBox.setText("Unable to open file. Please choose a valid file and reload the program. Exiting.");
+        msgBox.exec();
         exit(1);
 	}
 	// Returning the file stream
@@ -33,11 +35,13 @@ ifstream verify(ifstream readMap, string file, vector <Continent> &continents) {
                 getline(readMap, file, '\n');
                 string oneLine = file;
 
+                //finds the line with '=' at index 1 or greater, otherwise it marks the end of the continent
+
                 if (oneLine.find("=") == string::npos){
                     break;
                 }
                 else {
-                    unsigned long index = oneLine.find("=");
+                    int index = oneLine.find("=");
                     string continentName = oneLine.substr(0, index);
                     int value = stoi(oneLine.substr(index + 1));
                     continents.push_back(Continent(value, continentName));
@@ -50,8 +54,9 @@ ifstream verify(ifstream readMap, string file, vector <Continent> &continents) {
     }
 
     if (condition != 0) {
-        cout << "Invalid Map file format. GoodBye" << endl;
-        //system("Pause");
+        QMessageBox msgBox;
+        msgBox.setText("Invalid Map file format. Please choose a valid file and reload the program. Exiting.");
+        msgBox.exec();
         exit(1);
     }
 
@@ -155,7 +160,9 @@ vector <Info> MapLoader(string fileName, vector <Continent> &continents) {
 	readMap.close();
 
 	if (duplicates(map) == 0) {
-		cout << "Invalid Map" << endl;
+        QMessageBox msgBox;
+        msgBox.setText("Invalid Map file with duplicates. Please choose a valid file and reload the program. Exiting.");
+        msgBox.exec();
 		exit(1);
 	}
 

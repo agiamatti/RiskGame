@@ -1,12 +1,12 @@
-#include <iostream>
 #include "Subject.h"
 #include "Observer.h"
+#include <iostream>
 
 Subject::Subject(){
-    _observers = new list<Observer*>;
+	_observers = new list<Observer*>;
 }
-Subject::~Subject(){
-    delete _observers;
+Subject::~Subject(){ 
+	delete _observers;
 }
 void Subject::Attach(Observer* o){
   _observers->push_back(o);
@@ -16,7 +16,7 @@ void Subject::Detach(Observer* o){
 };
 void Subject::Notify(){
   list<Observer *>::iterator i = _observers->begin();
-  //std::cout << *i << std::endl;
-  for (; i != _observers->end(); ++i)
-    (*i)->Update();
+  for (; i != _observers->end(); ++i) {
+	  (*i)->Update();
+  }
 };

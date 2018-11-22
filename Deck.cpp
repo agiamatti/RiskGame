@@ -2,6 +2,10 @@
 
 using namespace std;
 
+Deck::Deck(){
+
+}
+
 // This is the constructor that is used during the game
 // It uses the info vector to get the list of country cards that need to be created 
 Deck::Deck(vector<Info> info) {
@@ -70,6 +74,22 @@ void Deck::incrementsTotalExchanges() {
 	totalExchanges++; 
 }
 
+int Deck::getExchangeBonus(){
+    if (totalExchanges ==1)
+        return 4;
+    if (totalExchanges ==2)
+        return 6;
+    if (totalExchanges ==3)
+        return 8;
+    if (totalExchanges ==4)
+        return 10;
+    if (totalExchanges ==5)
+        return 12;
+    if (totalExchanges ==6)
+        return 15;
+    if (totalExchanges >6)
+        return (totalExchanges-6)*5+15;
+}
 
 // Displays all of the cards in the deck
 void Deck::showDeck() {
@@ -112,6 +132,10 @@ Card Deck::draw() {
 	Card c = deck.back();
 	deck.pop_back();
 	return c;
+}
+
+void Deck::returnCard(Card c){
+    deck.push_back(c);
 }
 
 // Simple message to indicate the deck destructor has been called

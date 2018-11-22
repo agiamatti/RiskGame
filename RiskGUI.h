@@ -33,7 +33,6 @@
 #include "Info.h"
 #include "Dice.h"
 #include "Deck.h"
-#include "Hand.h"
 #include "Country.h"
 #include "Continent.h"
 #include "MapLoader.h"
@@ -57,14 +56,17 @@ public:
     explicit RiskGUI(QWidget *parent = nullptr);
     ~RiskGUI();
 
+    //getters
+    int getCurrentTurn();
+    int getDiceMode();
+    Player* getPlayerAtCurrentTurn();
+
+    //other methods
     void obtainParameters();
     void printParameters();
     void consoleOut(std::string output);
-    string getInput();
     int getIndex(int start, int end, string item);
     string getResponse();
-    int getDiceMode();
-    Player* getPlayerAtCurrentTurn();
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -89,13 +91,14 @@ private:
 
     //main attributes
     Map mp;
+    Deck* deck;
     vector <Country> countries;
     vector <Continent> continents;
     vector <Info> map;
     vector <Player*> p;
     vector <int> orderOfTurns;
 
-
+    int currentTurn;
     Player* playerAtCurrentTurn;
     SettingsDialog* settings;
     vector <string> playersSetup;

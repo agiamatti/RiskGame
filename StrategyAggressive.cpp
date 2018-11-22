@@ -6,28 +6,46 @@ StrategyAggressive::StrategyAggressive(Player* inputPlayer){
 }
 
 
-void StrategyAggressive::reinforce()
-{
-    int totalReinforcements = player->getReinforcementsPerTurn(); //+ player->getHandOfCards()->exchange(deck, player) + player.hand->exchange(deck, player);
+void StrategyAggressive::reinforceAtStart(int x){
+
     int countryIndex = 0;
     vector <Country*> countries = player->getCountriesOwned();
     int max = 0;
 
-    while (totalReinforcements > 0) {
-        for (int i = 0; i < countries.size(); i++) {
-            if (!countries.at(i)->getPlayer()->getAdjAttackable(countries.at(i)).empty() && countries.at(i)->getArmyValue()>max) {
-                max = countries.at(i)->getArmyValue();
-                countryIndex = i;
-            }
-        }
-        countries.at(countryIndex)->setArmyValue((countries.at(countryIndex)->getArmyValue() + 1));
-        totalReinforcements--;
+
+    for (unsigned long i = 0; i < countries.size(); i++) { //checks the player's countries, finds the one with the highest number of troops
+        if (!player->getAdjAttackable(countries.at(i)).empty() && countries.at(i)->getArmyValue()>max) {
+           max = countries.at(i)->getArmyValue();
+           countryIndex = i;
+         }
     }
+
+        player->reinforce(countries.at(countryIndex),x);
+
 }
 
 
-void StrategyAggressive::attack()
-{
+
+void StrategyAggressive::reinforce(){
+    int totalReinforcements = player->getReinforcementsPerTurn() + player->getHandOfCards()->automaticExchange(player);
+    int countryIndex = 0;
+    vector <Country*> countries = player->getCountriesOwned();
+    int max = 0;
+
+
+    for (unsigned long i = 0; i < countries.size(); i++) {  //checks the player's countries, finds the one with the highest number of troops
+        if (!player->getAdjAttackable(countries.at(i)).empty() && countries.at(i)->getArmyValue()>max) {
+           max = countries.at(i)->getArmyValue();
+           countryIndex = i;
+         }
+    }
+
+        player->reinforce(countries.at(countryIndex),totalReinforcements);
+
+}
+
+
+void StrategyAggressive::attack(){
     bool attacking = true;
 
     Country* source;
@@ -47,8 +65,8 @@ void StrategyAggressive::attack()
        int countryIndex = -1;
        int max = 0;
 
-       for (int i = 0; i < countries.size(); i++) {
-            if (!countries.at(i)->getPlayer()->getAdjAttackable(countries.at(i)).empty() && countries.at(i)->getArmyValue()>max && countries.at(i)->getArmyValue()>1) {
+       for (unsigned long i = 0; i < countries.size(); i++) { //will find an attackable country with more than 1 troops
+            if (!player->getAdjAttackable(countries.at(i)).empty() && countries.at(i)->getArmyValue()>max && countries.at(i)->getArmyValue()>1) {
                 max = countries.at(i)->getArmyValue();
                 countryIndex = i;
             }
@@ -76,25 +94,39 @@ void StrategyAggressive::attack()
 }
 
 
-void StrategyAggressive::fortify()
-{
+void StrategyAggressive::fortify(){
+    unsigned long sourceCountryIndex = -1;
+    int amount = 1;
+    vector<Country*> countries = player->getCountriesOwned();
+    Country* target;
 
-    vector <Country*> countries = player->getCountriesOwned();
-    int countryIndex = -1;
-    int max = 0;
+    for (unsigned long i = 0; i < countries.size(); i++) {
+        for(unsigned long j = 0; j< player->getAdjCountriesOwned(countries.at(i)).size(); j++){
 
-    for (int i = 0; i < countries.size(); i++) {
-         if (!countries.at(i)->getPlayer()->getAdjAttackable(countries.at(i)).empty() && countries.at(i)->getArmyValue()>max && countries.at(i)->getArmyValue()>1) {
-             max = countries.at(i)->getArmyValue();
-             countryIndex = i;
-         }
-     }
+            if (countries.at(i)->getArmyValue() > 1 && !player->getAdjAttackable(player->getAdjCountriesOwned(countries.at(i)).at(j)).empty()) { //if there is a territory with 2+ AV surrounding a territory that can attack
+                sourceCountryIndex = i;
+                target = player->getAdjCountriesOwned(countries.at(i)).at(j);
+                amount = countries.at(i)->getArmyValue()- 1;
+                break;
+            }
+        }
+    }
 
-    if(countryIndex>-1)
-        vector <Country*> maxCountryNeighbors = countries.at(countryIndex)->getPlayer()->getAdjCountriesOwned(countries.at(countryIndex));
+    if(sourceCountryIndex!=-1 && target!=NULL){
+        //cout << "forting " << countries.at(sourceCountryIndex)->getCountryName() << " to " << target->getCountryName() << " with " << amount << endl;
+        player->fortify(target, amount, countries.at(sourceCountryIndex));
 
+    }
 
+    else{
+        player->ui->consoleOut(player->getPlayerName() + " cannot find a suitable fortification.");
+    }
 
+}
+
+//Aggressive bot always rolls max
+int StrategyAggressive::getDice(int max){
+    return max;
 }
 
 bool StrategyAggressive::isHumanStrategy(){

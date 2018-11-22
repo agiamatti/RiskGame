@@ -5,6 +5,7 @@
 #include <QDialog>
 #include <QValidator>
 #include <QFileDialog>
+#include <QMessageBox>
 
 
 using namespace std;
@@ -13,7 +14,8 @@ namespace Ui {
 class SettingsDialog;
 }
 
-class SettingsDialog : public QDialog{
+class SettingsDialog : public QDialog
+{
     Q_OBJECT
 
 public:
@@ -32,6 +34,7 @@ private slots:
     void on_buttonBox_accepted();
     void on_buttonBox_rejected();
     void on_toolButton_pressed();
+    void on_SettingsDialog_rejected();
 
     void on_comboBox_activated(const QString &arg1);
     void on_comboBox_2_activated(const QString &arg1);
@@ -39,6 +42,7 @@ private slots:
     void on_comboBox_4_activated(const QString &arg1);
     void on_comboBox_5_activated(const QString &arg1);
     void on_comboBox_6_activated(const QString &arg1);
+
 
 private:
     Ui::SettingsDialog *ui;
