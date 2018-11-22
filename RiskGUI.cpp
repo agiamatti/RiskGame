@@ -136,7 +136,7 @@ string RiskGUI::getResponse(){
 
     output= ""; //clear; so the string doesn't persist
 
-    //Notify(); //update the view
+    Notify(); //update the view
     return response;
 }
 
@@ -189,7 +189,7 @@ int RiskGUI::getIndex(int start, int end, string item) {
 
         }
 
-        //Notify(); //update the view
+        Notify(); //update the view
         return index;
 }
 

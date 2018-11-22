@@ -40,10 +40,7 @@
 #include "Observer.h"
 #include "SettingsDialog.h"
 #include "Subject.h"
-//#include "Strategy.h"
-//#include "StrategyHuman.h"
-//#include "StrategyAggressive.h"
-//#include "StrategyBenevolent.h"
+
 
 using namespace std;
 

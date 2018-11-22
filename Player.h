@@ -3,7 +3,6 @@
 #include "Deck.h"
 #include "Hand.h"
 #include "Dice.h"
-#include "Subject.h"
 #include "StrategyBenevolent.h"
 #include "StrategyAggressive.h"
 #include "StrategyHuman.h"
@@ -17,6 +16,7 @@ public:
     //public attribute
     RiskGUI* ui;
 
+    //constructors
     Player(RiskGUI* ui_in, Deck& deck);					// the parametrized constructor; the name will be asked in the constructor
     Player(RiskGUI* ui_in, Deck& deck, string playerName); // the other parametrized constructor
     ~Player();
