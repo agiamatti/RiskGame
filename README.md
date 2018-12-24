@@ -5,4 +5,4 @@ Concordia University: COMP 345 Group Project
 
  GUI by Alan Giamatti
  
- Base game by Alan Giamatti, Jossi Fellig, Menachem Harrison, Patricia Nunes and Mauricia
+ Base game by Alan Giamatti, Jossi Fellig, Menachem Harrison, Patricia Nunes and Mauricio B
