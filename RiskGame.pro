@@ -75,7 +75,7 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-
+# icons for macOS (.icns) and Windows (.ico)
 ICON = myapp.icns
 #RC_ICONS = myapp.ico
 #from https://www.iconfinder.com/icons/2216341/earth_globe_location_map_world_world_globe_icon
