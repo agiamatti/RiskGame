@@ -1,5 +1,4 @@
 # RiskGame
-Concordia University: COMP 345 Group Project
 
  A game of Risk written in C++, using QT for GUI
 
